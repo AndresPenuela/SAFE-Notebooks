@@ -123,3 +123,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Word documents
+.docx
+
+# Other
+Vale/
+other/
+references/
