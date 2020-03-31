@@ -126,9 +126,9 @@ dmypy.json
 .pyre/
 
 # Word documents
-.docx
+*.docx
 
 # Other
 Vale/
-**/other
-**/references
+other/
+references/
