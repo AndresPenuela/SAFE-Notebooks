@@ -126,7 +126,7 @@ dmypy.json
 .pyre/
 
 # Word documents
-*.docx
+Interactive_Notebooks_for_SAFE.docx
 
 # Other
 Vale/
