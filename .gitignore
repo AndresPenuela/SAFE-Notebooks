@@ -130,5 +130,5 @@ dmypy.json
 
 # Other
 Vale/
-Screening/**/references/**
+Screening/HyMod/references/**
 Mapping/**/other/**
