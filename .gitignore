@@ -130,5 +130,5 @@ dmypy.json
 
 # Other
 Vale/
-**/other
-**/references
+Screening/**/references
+Mapping/**/other
