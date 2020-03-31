@@ -3,8 +3,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-Vale/
-
 # C extensions
 *.so
 
@@ -131,4 +129,4 @@ dmypy.json
 *.docx
 
 # Other
-/Vale
+Vale/
