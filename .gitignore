@@ -129,6 +129,4 @@ dmypy.json
 *.docx
 
 # Other
-Vale/
-other/
-references/
+/Vale
