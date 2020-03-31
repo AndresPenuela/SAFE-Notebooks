@@ -128,5 +128,7 @@ dmypy.json
 # Word documents
 .docx
 
-# Other 
+# Other
 Vale/
+**/other
+**/references
