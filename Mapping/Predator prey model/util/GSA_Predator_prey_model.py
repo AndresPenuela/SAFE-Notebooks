@@ -80,21 +80,16 @@ from __future__ import division, absolute_import, print_function
 
 import numpy as np
 import pandas as pd
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import scipy.stats as st
-import plotly.express as px
-from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from ipywidgets import widgets
 import warnings
 warnings.filterwarnings('ignore')
 
-from SAFEpython import PAWN
-import SAFEpython.plot_functions as pf # module to visualize the results
-from SAFEpython.model_execution import model_execution # module to execute the model
-from SAFEpython.sampling import AAT_sampling, AAT_sampling_extend # module to perform the input sampling
-from SAFEpython.util import aggregate_boot  # function to aggregate the bootstrap results
+from util import PAWN
+from util.model_execution import model_execution # module to execute the model
+from util.sampling import AAT_sampling# module to perform the input sampling
 
 import util.predator_prey_model as predator_prey_model
 

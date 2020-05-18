@@ -47,11 +47,9 @@ from ipywidgets import widgets
 import warnings
 warnings.filterwarnings('ignore')
 
-from SAFEpython import PAWN
-import SAFEpython.plot_functions as pf # module to visualize the results
-from SAFEpython.model_execution import model_execution # module to execute the model
-from SAFEpython.sampling import AAT_sampling, AAT_sampling_extend # module to perform the input sampling
-from SAFEpython.util import aggregate_boot  # function to aggregate the bootstrap results
+from util import PAWN
+from util.model_execution import model_execution # module to execute the model
+from util.sampling import AAT_sampling# module to perform the input sampling
 
 from util.HyMOD_gamma import hymod_gamma,hymod_gamma_nse
 
