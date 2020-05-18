@@ -79,7 +79,7 @@ def predator_prey_interactive():
     
     predator_ini = widgets.IntSlider(min=1,
                                 max=10,
-                                value=5, step = 1,
+                                value=2, step = 1,
                                 description = 'Predator initial pop: ',
                                 continuous_update=False,
                                 style = {'description_width': '200px'} ,layout={'width': '500px'})
