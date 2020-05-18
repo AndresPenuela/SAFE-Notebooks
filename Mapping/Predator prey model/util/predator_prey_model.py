@@ -5,6 +5,7 @@ This function is a Python implementation of the predator prey model
 @author: Andres Peñuela andres.penuela-fernandez@bristol.ac.uk, penyuela@gmail.com
 """
 import numpy as np
+from numba import njit # the function jit allows to compile the code and reduced
 
 class predator:
     def __init__(self,ini = 1, attack_rate = 0.5, death_rate = 0.7, efficiency_rate = 1.6):
@@ -49,3 +50,38 @@ def simulation(T,predator,prey,environment):
         predator_pop[t] = np.max([predator_pop[t-1] + d_predator,0])
         
     return predator_pop,prey_pop
+
+@njit(parallel = False) # Numba decorator to speed-up the function below
+def function(param,T,output):
+    # predetor
+    predator_ini      = param[0]
+    attack_rate       = param[1]
+    efficiency_rate   = param[2]
+    death_rate        = param[3]
+
+    # prey
+    prey_ini          = param[4]
+    growth_rate       = 1
+    # environment
+    carrying_capacity = 15
+    
+    prey_pop = np.zeros(T) # array for storing the current prey amounts 
+    predator_pop = np.zeros(T) # array for storing the current predator amounts 
+    prey_pop[0] = prey_ini
+    predator_pop[0] = predator_ini
+    
+    period = 1/7
+    
+    # For loop which adds the differentials to the prey and predator populations for a given amount of time
+    for t in np.arange(1,T):
+        d_prey = (growth_rate * (1 - prey_pop[t-1] / carrying_capacity) - attack_rate * predator_pop[t-1]) * prey_pop[t-1] * period
+        d_predator = (-death_rate + efficiency_rate * prey_pop[t-1]) * predator_pop[t-1] * period
+        prey_pop[t] = np.array([prey_pop[t-1] + d_prey,0]).max()# stores the new values in the arrays for plotting
+        predator_pop[t] = np.array([predator_pop[t-1] + d_predator,0]).max()
+        
+    if output == 0:
+        out = np.array(predator_pop[-1])
+    elif output == 1:
+        out = np.array(prey_pop[-1])
+        
+    return out

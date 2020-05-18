@@ -33,6 +33,7 @@ dRI / dt = γS
 @author: Andres Peñuela
 """
 from scipy.integrate import odeint
+import numpy as np
 
 class population:
     
@@ -68,3 +69,40 @@ def simulation(t,population, beta, gamma, alpha):
     V, S, RI, D = ret.T
     
     return D, S, RI, V
+
+def function(param,N,t):
+    RI_0 = param[0]*N
+    S_0 = param[1]
+    beta = param[2]
+    gamma = 1/param[3]
+    alpha = param[4]
+    
+    D_0 = 0
+    V_0 = N - S_0 - RI_0 - D_0
+    
+    y_0 = V_0, S_0, RI_0, D_0
+    
+    def deriv(y, t, N, beta, gamma,alpha):
+        V, S, IR, D = y
+        dVdt = -beta * V * S / N
+        dSdt = beta * V * S / N - gamma * S - alpha * S * S / N #- sigma * S
+        dRIdt = gamma * S
+        dDdt = alpha * S * S / N # + sigma * S  
+        
+        return dVdt, dSdt, dRIdt, dDdt
+    
+    ret = odeint(deriv, y_0, t, args=(N, beta, gamma, alpha))
+    V, S, RI, D = ret.T
+    
+#    if output == 0:
+#        out = np.array(D[-1])
+#    elif output == 1:
+#        out = np.array(S[-1])
+#    elif output == 2:
+#        out = np.array(RI[-1])
+#    elif output == 3:
+#        out = np.array(V[-1])
+    
+    out = np.array(np.max(S))
+    
+    return out
