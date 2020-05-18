@@ -8,6 +8,7 @@ This function is a Python implementation of the rainfall-runoff model Hymod
 # HyMOD model
 import numpy as np
 from util.util import NSE
+#from numba import njit
 
 class hymod_gamma:
 
