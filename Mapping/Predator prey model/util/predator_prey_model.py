@@ -51,8 +51,7 @@ def simulation(T,predator,prey,environment):
         
     return predator_pop,prey_pop
 
-@njit(parallel = False) # Numba decorator to speed-up the function below
-def function(param,T,output):
+def model(param,T):
     # predetor
     predator_ini      = param[0]
     attack_rate       = param[1]
@@ -61,9 +60,9 @@ def function(param,T,output):
 
     # prey
     prey_ini          = param[4]
-    growth_rate       = 1
+    growth_rate       = 1.5
     # environment
-    carrying_capacity = 15
+    carrying_capacity = 20
     
     prey_pop = np.zeros(T) # array for storing the current prey amounts 
     predator_pop = np.zeros(T) # array for storing the current predator amounts 
@@ -75,13 +74,45 @@ def function(param,T,output):
     # For loop which adds the differentials to the prey and predator populations for a given amount of time
     for t in np.arange(1,T):
         d_prey = (growth_rate * (1 - prey_pop[t-1] / carrying_capacity) - attack_rate * predator_pop[t-1]) * prey_pop[t-1] * period
-        d_predator = (-death_rate + efficiency_rate * prey_pop[t-1]) * predator_pop[t-1] * period
+        d_predator = (-death_rate + attack_rate * efficiency_rate * prey_pop[t-1]) * predator_pop[t-1] * period
         prey_pop[t] = np.array([prey_pop[t-1] + d_prey,0]).max()# stores the new values in the arrays for plotting
         predator_pop[t] = np.array([predator_pop[t-1] + d_predator,0]).max()
+#        if prey_pop[t] < 2 or predator_pop[t] < 2 or prey_pop[t] > carrying_capacity or predator_pop[t] > carrying_capacity:
+#            break
         
-    if output == 0:
-        out = np.array(predator_pop[-1])
-    elif output == 1:
-        out = np.array(prey_pop[-1])
+    return predator_pop,prey_pop
+
+
+@njit(parallel = False) # Numba decorator to speed-up the function below
+def function(param,T):
+    # predetor
+    predator_ini      = param[0]
+    attack_rate       = param[1]
+    efficiency_rate   = param[2]
+    death_rate        = param[3]
+
+    # prey
+    prey_ini          = param[4]
+    growth_rate       = 1.5
+    # environment
+    carrying_capacity = 20
+    
+    prey_pop = np.zeros(T) # array for storing the current prey amounts 
+    predator_pop = np.zeros(T) # array for storing the current predator amounts 
+    prey_pop[0] = prey_ini
+    predator_pop[0] = predator_ini
+    
+    period = 1/7
+    
+    # For loop which adds the differentials to the prey and predator populations for a given amount of time
+    for t in np.arange(1,T):
+        d_prey = (growth_rate * (1 - prey_pop[t-1] / carrying_capacity) - attack_rate * predator_pop[t-1]) * prey_pop[t-1] * period
+        d_predator = (-death_rate + attack_rate * efficiency_rate * prey_pop[t-1]) * predator_pop[t-1] * period
+        prey_pop[t] = np.array([prey_pop[t-1] + d_prey,0]).max()# stores the new values in the arrays for plotting
+        predator_pop[t] = np.array([predator_pop[t-1] + d_predator,0]).max()
+#        if prey_pop[t] < 2 or predator_pop[t] < 2 or prey_pop[t] > carrying_capacity or predator_pop[t] > carrying_capacity:
+#            break
+    equil_value = 7
+    equil_error = np.array(np.abs(predator_pop[-1]-equil_value)+np.abs(prey_pop[-1]-equil_value))
         
-    return out
+    return equil_error

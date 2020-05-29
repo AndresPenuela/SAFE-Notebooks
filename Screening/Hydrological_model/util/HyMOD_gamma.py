@@ -7,7 +7,6 @@ This function is a Python implementation of the rainfall-runoff model Hymod
 
 # HyMOD model
 import numpy as np
-from util.util import NSE
 #from numba import njit
 
 class hymod_gamma:
@@ -95,10 +94,10 @@ class hymod_gamma:
             
         return Q_sim
 
-def hymod_gamma_nse(x, rain, ept, flow, warmup):
+def hymod_gamma_error(x, rain, ept, flow, warmup):
 
     """This function runs the rainfall-runoff Hymod model
-    and returns the associated Nash-Sutcliffe Efficiency
+    and returns the associated error
 
     y, Q_sim, STATES, FLUXES = HyMod.hymod_nse(x, rain, ept, flow, warmup)
 
@@ -111,7 +110,7 @@ def hymod_gamma_nse(x, rain, ept, flow, warmup):
     warmup =  number of time steps for model warm-up       - integer
 
     Output:
-         y = Nash-Sutcliffe Efficiency                     - numpy.ndarray(1, )
+         y = erro                                          - numpy.ndarray(1, )
      Q_sim = time series of simulated flow                 - numpy.ndarray(T, )
     STATES = time series of simulated storages             - numpy.ndarray(T,5)
              (all in mm)
@@ -175,9 +174,9 @@ def hymod_gamma_nse(x, rain, ept, flow, warmup):
 
     Qs = Q_sim[warmup:len(Q_sim)+1]
     Qo = flow[warmup:len(Q_sim)+1]
-    y = np.array(np.max([NSE(Qs, Qo),0])*100)
+    y = np.array(np.sum(np.abs(Qs - Qo)))
 
-    return y, Q_sim
+    return y
 
 def function(param, rain, ept):
     

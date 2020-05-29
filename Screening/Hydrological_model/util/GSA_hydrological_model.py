@@ -50,8 +50,9 @@ warnings.filterwarnings('ignore')
 from util import PAWN
 from util.model_execution import model_execution # module to execute the model
 from util.sampling import AAT_sampling# module to perform the input sampling
+from util.util import aggregate_boot
 
-from util.HyMOD_gamma import hymod_gamma,hymod_gamma_nse
+from util.HyMOD_gamma import hymod_gamma,hymod_gamma_error
 
 def screening(param_obs):
     # ### Step 2: Setup the model
@@ -77,7 +78,7 @@ def screening(param_obs):
     distr_par  = [np.nan] * M
     
     # Define output:
-    fun_test = hymod_gamma_nse
+    fun_test = hymod_gamma_error
     
     
     # #### Range of variability
@@ -85,11 +86,11 @@ def screening(param_obs):
     # In[4]:
     
     
-    data = [["mm", 10   , 90 , "Soil storage capacity"],
-            ["-",  0.01, 0.99   , "Evaporation rate"],
-            ["-",  0.01, 0.99, "Infiltration rate"],
-            ["days",  0.8, 2,       "Travel time - surface flow"],
-            ["days",  2, 10,      "Travel time - underground flow"]]
+    data = [["mm",    10,   90 , "Soil storage capacity"],
+            ["-",     0.01, 0.99   , "Evaporation ratio"],
+            ["-",     0.01, 0.99, "Infiltration ratio"],
+            ["days",  0.8,  2,       "Travel time - surface flow"],
+            ["days",  2,    10,      "Travel time - underground flow"]]
     model_param = pd.DataFrame(data, 
                                columns=["Unit", "Min value", "Max value", "Description"],
                                index = param_names)
@@ -103,7 +104,9 @@ def screening(param_obs):
     
     
     T = 150 # days
+    np.random.seed(1)
     rain = 20 * np.random.random(T)
+    np.random.seed(2)
     ept = 5 * np.random.random(T)
     warmup = 31 # days
     
@@ -114,13 +117,15 @@ def screening(param_obs):
     
     
     model_obs = hymod_gamma(param_obs)
-    Q_obs = model_obs.simulation(param_obs, rain, ept)
+    np.random.seed(3)
+    noise = np.random.random(T)*1
+    Q_obs = model_obs.simulation(param_obs, rain, ept) + noise
     
     
     # In[7]:
     
     
-    outputs  = ["sim flow - obs flow"]
+    outputs  = ["Calibration error"]
     
     model_outputs = pd.DataFrame(outputs, columns = ['model outputs'])
     model_outputs
@@ -254,20 +259,47 @@ def screening(param_obs):
     X = sample_input(distr_par).X
     Y = run_model(X).Y # NSE*100 = simulation accuracy (%)
     KS_median, _, _, KS_dummy = PAWN.pawn_indices(X, Y, n, dummy = True)
+    KS_median, _, _ = PAWN.pawn_indices(X, Y, n, Nboot=1000)
+    # KS_median has shape (Nboot, M)
+    # Compute mean and confidence intervals of the sensitivity indices across the
+    # bootstrap resamples:
+    KS_median_m, KS_median_lb, KS_median_ub = aggregate_boot(KS_median) # shape (M,)
     
     
     # In[14]:
     
     
     fig1 = go.FigureWidget(layout = dict(width=500, height=300,showlegend = False,margin=dict(t=10,r=0,l=75)))
-    fig1.add_trace(go.Box(y=[KS_median[0]], name = model_param["Description"][0]))
-    fig1.add_trace(go.Box(y=[KS_median[1]], name = model_param["Description"][1]))
-    fig1.add_trace(go.Box(y=[KS_median[2]], name = model_param["Description"][2]))
-    fig1.add_trace(go.Box(y=[KS_median[3]], name = model_param["Description"][3]))
-    fig1.add_trace(go.Box(y=[KS_median[4]], name = model_param["Description"][4]))
-    fig1.add_trace(go.Box(y=KS_dummy, name = 'dummy'))
+    # Soil storage capacity
+    fig1.add_trace(go.Scatter(x=[-0.25,0.25], y=np.ones(2)*KS_median_m[0], mode = 'lines', line = dict(color ='rgba(120, 170, 150, 1)')))
+    fig1.add_trace(go.Scatter(x=[-0.25,0.25], y=np.ones(2)*KS_median_lb[0], mode = 'lines', line = dict(color ='rgba(120, 170, 150, 0)')))
+    fig1.add_trace(go.Scatter(x=[-0.25,0.25], y=np.ones(2)*KS_median_ub[0], mode = 'none', fill='tonexty',fillcolor = 'rgba(120, 170, 150, 0.25)'))
+    # Evaporation rate
+    fig1.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_m[1], mode = 'lines', line = dict(color ='rgba(250, 0, 0, 1)')))
+    fig1.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_lb[1], mode = 'lines', line = dict(color ='rgba(250, 0, 0, 0)')))
+    fig1.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_ub[1], mode = 'none', fill='tonexty',fillcolor = 'rgba(250, 0, 0, 0.25)'))
+    # Infiltration rate
+    fig1.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_m[2], mode = 'lines', line = dict(color ='rgba(105,105,105, 1)')))
+    fig1.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_lb[2], mode = 'lines', line = dict(color ='rgba(105,105,105, 0)')))
+    fig1.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_ub[2], mode = 'none', fill='tonexty',fillcolor = 'rgba(105,105,105, 0.25)'))
+    # Travel time - surface flow (days)
+    fig1.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_m[3], mode = 'lines', line = dict(color ='rgba(44,172,206, 1)')))
+    fig1.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_lb[3], mode = 'lines', line = dict(color ='rgba(44,172,206, 0)')))
+    fig1.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_ub[3], mode = 'none', fill='tonexty',fillcolor = 'rgba(44,172,206, 0.25)'))
+    # Travel time - underground flow (days)
+    fig1.add_trace(go.Scatter(x=[3.75,4.25], y=np.ones(2)*KS_median_m[4], mode = 'lines', line = dict(color ='rgba(33,76,127, 1)')))
+    fig1.add_trace(go.Scatter(x=[3.75,4.25], y=np.ones(2)*KS_median_lb[4], mode = 'lines', line = dict(color ='rgba(33,76,127, 0)')))
+    fig1.add_trace(go.Scatter(x=[3.75,4.25], y=np.ones(2)*KS_median_ub[4], mode = 'none', fill='tonexty',fillcolor = 'rgba(33,76,127, 0.25)'))
+    # Threshold
+    fig1.add_shape(dict(type="line",x0=-1,y0=KS_dummy[0],x1=M,y1=KS_dummy[0],line=dict(color="black",width=2, dash='dash')))
+    
+    fig1.layout.xaxis.range=[-0.5,4.5]
+    fig1.update_layout(xaxis = dict(tickmode = 'array',tickvals = [0, 1, 2, 3, 4],ticktext = model_param["Description"]))
     fig1.layout.yaxis.range=[0,1]
     fig1.layout.yaxis.title='Sensitivity index'
+    
+    
+#    trace_dummy = go.Scatter(x=np.arange(M),y=np.array(KS_dummy*M),mode = 'lines')
     
     # In[16]:
     
@@ -299,7 +331,7 @@ def mapping(param_obs,x1,x2,x3,x4,x5):
     distr_par  = [np.nan] * M
     
     # Define output:
-    fun_test = hymod_gamma_nse
+    fun_test = hymod_gamma_error
     
     
     # #### Range of variability
@@ -308,8 +340,8 @@ def mapping(param_obs,x1,x2,x3,x4,x5):
     
     
     data = [["mm", 10   , 90 , "Soil storage capacity"],
-            ["-",  0.01, 0.99   , "Evaporation rate"],
-            ["-",  0.01, 0.99, "Infiltration rate"],
+            ["-",  0.01, 0.99   , "Evaporation ratio"],
+            ["-",  0.01, 0.99, "Infiltration ratio"],
             ["days",  0.8, 2,       "Travel time - surface flow"],
             ["days",  2, 10,      "Travel time - underground flow"]]
     model_param = pd.DataFrame(data, 
@@ -325,7 +357,9 @@ def mapping(param_obs,x1,x2,x3,x4,x5):
     
     
     T = 150 # days
+    np.random.seed(1)
     rain = 20 * np.random.random(T)
+    np.random.seed(2)
     ept = 5 * np.random.random(T)
     warmup = 31 # days
     
@@ -336,13 +370,15 @@ def mapping(param_obs,x1,x2,x3,x4,x5):
     
     
     model_obs = hymod_gamma(param_obs)
-    Q_obs = model_obs.simulation(param_obs, rain, ept)
+    np.random.seed(3)
+    noise = np.random.random(T)*1
+    Q_obs = model_obs.simulation(param_obs, rain, ept) + noise
     
     
     # In[7]:
     
     
-    outputs  = ["sim flow - obs flow"]
+    outputs  = ["calibration error"]
     
     model_outputs = pd.DataFrame(outputs, columns = ['model outputs'])
     model_outputs
@@ -369,7 +405,7 @@ def mapping(param_obs,x1,x2,x3,x4,x5):
     # In[9]:
     
     
-    N = 1000 # number of samples
+    N = 5000 # number of samples
     class sample_input:
         def __init__(self,distr_par):
             self.X = AAT_sampling(samp_strat, M, distr_fun, distr_par, N)
@@ -399,30 +435,75 @@ def mapping(param_obs,x1,x2,x3,x4,x5):
     
     
     # In[18]:
+#    
+#    
+#    colorscale = 'gist_earth' # black and white plot
+#    ms=15
+#    font_size = 12
+#    Y = Y.flatten() # shape (N, )
+#    Labels = [np.nan]*M
+#    for i in range(M):
+#        Labels[i] = param_names[i]
+#    
+#    fig = plt.figure(figsize=(10, 10))    
+#    k = 1
+#    for i in range(M-1):
+#        for j in range(i+1, M, 1):
+#            plt.subplot(M-1, M-1, k+i)
+#            map_plot = plt.scatter(X[:, i], X[:, j], s=ms, c=Y, cmap=colorscale,vmin=0, vmax=400)
+#            plt.xlabel(Labels[i], fontsize = font_size)
+#            plt.ylabel(Labels[j], fontsize = font_size)
+#            plt.xlim((np.min(X[:, i]), np.max(X[:, i])))
+#            plt.ylim((np.min(X[:, j]), np.max(X[:, j])))
+#            plt.xticks([])
+#            plt.yticks([])
+#            k = k + 1
+#        k = k + i
+#    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, hspace=0.5, wspace=0.5)
+#    # Create colorbar
+#    cax = fig.add_axes([0.92, 0.05, 0.02, 0.8]) # Add axes for the colorbar
+#    cb = plt.colorbar(map_plot, ax=cax, fraction=1, extendfrac=1, extendrect=True)
+#    cb.set_label(outputs[0], fontsize = font_size)
+#    cb.ax.tick_params(labelsize=font_size)
+#    # Make axes of the colorbar invisible
+#    cax.set_visible(False)
+    # In[19]:
     
-    
-    colorscale = 'rainbow' # black and white plot
-    ms=15
+    colorscale = 'gist_earth' # black and white plot
+    ms=25
     font_size = 12
-    Y = Y.flatten() # shape (N, )
-    Labels = [np.nan]*M
-    for i in range(M):
-        Labels[i] = param_names[i]
+    Y1 = Y.flatten() # shape (N, )
     
-    fig = plt.figure(figsize=(10, 10))    
-    k = 1
-    for i in range(M-1):
-        for j in range(i+1, M, 1):
-            plt.subplot(M-1, M-1, k+i)
-            map_plot = plt.scatter(X[:, i], X[:, j], s=ms, c=Y, cmap=colorscale,vmin=0, vmax=100)
-            plt.xlabel(Labels[i], fontsize = font_size)
-            plt.ylabel(Labels[j], fontsize = font_size)
-            plt.xlim((np.min(X[:, i]), np.max(X[:, i])))
-            plt.ylim((np.min(X[:, j]), np.max(X[:, j])))
-            plt.xticks([])
-            plt.yticks([])
-            k = k + 1
-        k = k + i
+    Y,X[:, 1] = zip(*sorted(zip(Y1,X[:, 1])))
+    Y,X[:, 2] = zip(*sorted(zip(Y1,X[:, 2])))
+    Y,X[:, 3] = zip(*sorted(zip(Y1,X[:, 3])))
+    Y = np.flipud(Y)
+    X = np.flipud(X)
+    
+    Labels = model_param['Description']
+    
+    fig = plt.figure(figsize=(8, 8))  
+    # Evap rate vs Inf rate
+    plt.subplot(2, 2, 1)
+    map_plot = plt.scatter(X[:, 1], X[:, 2], s=ms, c=Y, cmap=colorscale,vmin=0, vmax=400)
+    plt.xlabel(Labels[1], fontsize = font_size)
+    plt.ylabel(Labels[2], fontsize = font_size)
+    plt.xlim((np.min(X[:, 1]), np.max(X[:, 1])))
+    plt.ylim((np.min(X[:, 2]), np.max(X[:, 2])))
+    # Evap rate vs Travel time - surf flow
+    plt.subplot(2, 2, 2)
+    map_plot = plt.scatter(X[:, 1], X[:, 3], s=ms, c=Y, cmap=colorscale,vmin=0, vmax=400)
+    plt.xlabel(Labels[1], fontsize = font_size)
+    plt.ylabel(Labels[3], fontsize = font_size)
+    plt.xlim((np.min(X[:, 1]), np.max(X[:, 1])))
+    plt.ylim((np.min(X[:, 3]), np.max(X[:, 3])))
+    # Inf rate vs Travel time - surf flow
+    plt.subplot(2, 2, 4)
+    map_plot = plt.scatter(X[:, 2], X[:, 3], s=ms, c=Y, cmap=colorscale,vmin=0, vmax=400)
+    plt.xlabel(Labels[2], fontsize = font_size)
+    plt.ylabel(Labels[3], fontsize = font_size)
+    plt.xlim((np.min(X[:, 2]), np.max(X[:, 2])))
+    plt.ylim((np.min(X[:, 3]), np.max(X[:, 3])))
     plt.subplots_adjust(left=None, bottom=None, right=None, top=None, hspace=0.5, wspace=0.5)
     # Create colorbar
     cax = fig.add_axes([0.92, 0.05, 0.02, 0.8]) # Add axes for the colorbar
@@ -430,6 +511,6 @@ def mapping(param_obs,x1,x2,x3,x4,x5):
     cb.set_label(outputs[0], fontsize = font_size)
     cb.ax.tick_params(labelsize=font_size)
     # Make axes of the colorbar invisible
-    cax.set_visible(False)
+    cax.set_visible(False)    
     
     return fig

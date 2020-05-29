@@ -46,18 +46,17 @@ def predator_prey_interactive():
     T = 3000 # days
     time_range = np.arange(1,T)
     
-    
+    equil_value = 7
     # ### Function to update the simulation when changing the parameters with the sliders
     
     # In[3]:
     
     
     def update_sim(predator_ini,attack_rate,death_rate,efficiency_rate,prey_ini,growth_rate,carrying_capacity):
-        predator = predator_prey_model.predator(predator_ini.value,attack_rate.value,death_rate.value,efficiency_rate.value)
-        prey = predator_prey_model.prey(prey_ini.value,growth_rate.value)
-        environment = predator_prey_model.environment(carrying_capacity.value)
-        predator_pop,prey_pop = predator_prey_model.simulation(T,predator,prey,environment)
-        return predator_pop,prey_pop
+        param = [predator_ini.value,attack_rate.value,efficiency_rate.value,death_rate.value,prey_ini.value]
+        predator_pop,prey_pop = predator_prey_model.model(param,T)
+        equil_error = np.array(np.abs(predator_pop[-1]-equil_value)+np.abs(prey_pop[-1]-equil_value))
+        return predator_pop,prey_pop,equil_error
     
     
     # ### Function to update the figure when changing the parameters with the sliders
@@ -69,7 +68,8 @@ def predator_prey_interactive():
         with fig.batch_animate(duration=1000):
             fig.data[0].y = update_sim(predator_ini,attack_rate,death_rate,efficiency_rate,prey_ini,growth_rate,carrying_capacity)[0]
             fig.data[1].y = update_sim(predator_ini,attack_rate,death_rate,efficiency_rate,prey_ini,growth_rate,carrying_capacity)[1]
-    
+            fig.layout.title = "equilibrium error = "+\
+            str("%.0f" % (update_sim(predator_ini,attack_rate,death_rate,efficiency_rate,prey_ini,growth_rate,carrying_capacity)[2]*1000)+" individuals")
     
     # ### Definition of the sliders
     # #### Initial number of predators
@@ -77,12 +77,12 @@ def predator_prey_interactive():
     # In[5]:
     
     
-    predator_ini = widgets.IntSlider(min=1,
+    predator_ini = widgets.IntSlider(min=2,
                                 max=10,
                                 value=2, step = 1,
-                                description = 'Predator initial pop: ',
+                                description = 'Predator initial population (x1000): ',
                                 continuous_update=False,
-                                style = {'description_width': '200px'} ,layout={'width': '500px'})
+                                style = {'description_width': '300px'} ,layout={'width': '600px'})
     predator_ini.observe(update_figure,names = 'value')
     
     
@@ -91,12 +91,12 @@ def predator_prey_interactive():
     # In[6]:
     
     
-    attack_rate = widgets.FloatSlider(min=0.1,
+    attack_rate = widgets.FloatSlider(min=0.01,
                                max=1,
-                               value=0.5, step = 0.01,
-                               description = 'Predator attack rate: ',
+                               value=0.01, step = 0.01,
+                               description = 'Predator attack rate (attacks per week): ',
                                continuous_update=False,
-                                style = {'description_width': '200px'} ,layout={'width': '500px'})
+                                style = {'description_width': '300px'} ,layout={'width': '600px'})
     attack_rate.observe(update_figure,names = 'value')
     
     
@@ -105,12 +105,12 @@ def predator_prey_interactive():
     # In[7]:
     
     
-    efficiency_rate = widgets.FloatSlider(min=0.1,
+    efficiency_rate = widgets.FloatSlider(min=0.01,
                               max=1,
-                              value=0.5, step = 0.01, 
-                              description = 'Predator efficiency: ',
+                              value=0.01, step = 0.01, 
+                              description = 'Predator efficiency ratio: ',
                               continuous_update=False,
-                                style = {'description_width': '200px'} ,layout={'width': '500px'})
+                                style = {'description_width': '300px'} ,layout={'width': '600px'})
     efficiency_rate.observe(update_figure,names = 'value')
     
     
@@ -119,12 +119,12 @@ def predator_prey_interactive():
     # In[8]:
     
     
-    death_rate = widgets.FloatSlider(min=0.1,
+    death_rate = widgets.FloatSlider(min=0.01,
                                 max=1,
-                                value=0.5, step = 0.01, 
-                                description = 'Predator death rate: ',
+                                value=0.01, step = 0.01, 
+                                description = 'Predator death rate (deaths per week): ',
                                 continuous_update=False,
-                                style = {'description_width': '200px'} ,layout={'width': '500px'})
+                                style = {'description_width': '300px'} ,layout={'width': '600px'})
     death_rate.observe(update_figure,names = 'value')
     
     
@@ -133,12 +133,12 @@ def predator_prey_interactive():
     # In[9]:
     
     
-    prey_ini = widgets.IntSlider(min=1,
+    prey_ini = widgets.IntSlider(min=2,
                                 max=10,
-                                value=5, step = 1,
-                                description = 'Prey initial pop: ',
+                                value=2, step = 1,
+                                description = 'Prey initial population (x1000): ',
                                 continuous_update=False,
-                                style = {'description_width': '200px'} ,layout={'width': '500px'})
+                                style = {'description_width': '300px'} ,layout={'width': '600px'})
     prey_ini.observe(update_figure,names = 'value')
     
     
@@ -147,12 +147,12 @@ def predator_prey_interactive():
     # In[10]:
     
     
-    growth_rate = widgets.FloatSlider(min=0.001,
-                                max=2,
-                                value=1, step = 0.1, 
+    growth_rate = widgets.FloatSlider(min=0.01,
+                                max=3,
+                                value=1.5, step = 0.1, 
                                 description = 'Growth rate of preys: ',
                                 continuous_update=False,
-                                style = {'description_width': '200px'} ,layout={'width': '500px'})
+                                style = {'description_width': '300px'} ,layout={'width': '600px'})
     growth_rate.observe(update_figure,names = 'value')
     
     
@@ -163,10 +163,10 @@ def predator_prey_interactive():
     
     carrying_capacity = widgets.IntSlider(min=1,
                                 max=20,
-                                value=15, step = 1, 
+                                value=20, step = 1, 
                                 description = 'Carrying capacity of environment: ',
                                 continuous_update=False,
-                                style = {'description_width': '200px'} ,layout={'width': '500px'})
+                                style = {'description_width': '300px'} ,layout={'width': '600px'})
     carrying_capacity.observe(update_figure,names = 'value')
     
     
@@ -176,33 +176,33 @@ def predator_prey_interactive():
     # In[12]:
     
     
-    predator_pop,prey_pop = update_sim(predator_ini,attack_rate,death_rate,efficiency_rate,prey_ini,growth_rate,carrying_capacity)
+    predator_pop,prey_pop,equil_error = update_sim(predator_ini,attack_rate,death_rate,efficiency_rate,prey_ini,growth_rate,carrying_capacity)
     
     
     # #### Figure with two traces: predator and prey populations ###
     
     # In[15]:
-    
-    
-    predator_trace = go.Scatter(x=time_range, y=predator_pop, name='predator', marker_color = 'red')
-    prey_trace = go.Scatter(x=time_range, y=prey_pop, name='prey', marker_color = 'blue')
-    fig = go.FigureWidget(data   = [predator_trace,prey_trace],
-                          layout = go.Layout(xaxis = dict(title = 'days', range = [1,365],
-                                                          rangeslider=dict(visible=True,range=[1,T])),
+    predator_trace = go.Scatter(x=time_range, y=predator_pop, name='predator', marker_color = 'rgba(180, 69, 42, 1)',line=dict(width=3))
+    prey_trace = go.Scatter(x=time_range, y=prey_pop, name='prey', marker_color = 'rgba(26, 132, 148, 1)',line=dict(width=3))
+    equil_trace_1 = go.Scatter(x=[0,T+1],y=[equil_value+0.25,equil_value+0.25], mode = 'lines',name='equilibrium',line=dict(color="darkblue",width=1, dash='dash'))
+    equil_trace_2 = go.Scatter(x=[0,T+1],y=[equil_value-0.25,equil_value-0.25], mode = 'lines',name='equilibrium',line=dict(color="darkblue",width=1, dash='dash'),showlegend=False)
+    fig = go.FigureWidget(data   = [predator_trace,prey_trace,equil_trace_1,equil_trace_2],
+                          layout = go.Layout(xaxis = dict(title = 'days', titlefont = dict(size=20),
+                                                          range = [1,365],
+                                                          #rangeslider=dict(visible=True,range=[1,T])
+                                                          ),
                                              yaxis = dict(range = [0,carrying_capacity.max+1],
-                                                          title = 'population'),
+                                                          title = 'population (x1000)',titlefont = dict(size=20)),
+                                             title = "equilibrium error = "+str("%.0f" % (equil_error*1000))+" individuals",
                                              margin=dict(t=30)))
     
-    
+#    fig.add_shape(dict(type="line",x0=-1,y0= equil_value,x1=T,y1= equil_value,line=dict(color="darkblue",width=2, dash='dash')),name='equilibrium')
+        
     # #### Plot
     
     # In[16]:
     
     
-#    widgets.VBox([widgets.VBox([predator_ini,attack_rate,efficiency_rate,death_rate,prey_ini,growth_rate,carrying_capacity]),
-#                  fig])
-
-
     return predator_ini,attack_rate,efficiency_rate,death_rate,prey_ini,growth_rate,carrying_capacity,fig
 
 

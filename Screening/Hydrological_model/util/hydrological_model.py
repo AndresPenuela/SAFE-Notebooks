@@ -27,8 +27,7 @@ import pandas as pd
 import plotly.graph_objs as go
 from ipywidgets import widgets, Layout
 
-from util.HyMOD_gamma import hymod_gamma
-from util.util import RMSE
+from util.HyMOD_gamma import hymod_gamma,hymod_gamma_error
 
 def hydrological_model():
     # ## Model parameters
@@ -40,8 +39,8 @@ def hydrological_model():
     
     
     data = [["mm", 10   , 90 , "Soil storage capacity"],
-            ["-",  0.01, 0.99   , "Evaporation rate"],
-            ["-",  0.01, 0.99, "Infiltration rate"],
+            ["-",  0.01, 0.99, "Evaporation ratio"],
+            ["-",  0.01, 0.99, "Infiltration ratio"],
             ["-",  0.8, 2,       "Travel time - surface flow"],
             ["-",  2, 10,      "Travel time - underground flow"]]
     model_param = pd.DataFrame(data, 
@@ -66,8 +65,9 @@ def hydrological_model():
     
     # In[4]:
     
-    
+    np.random.seed(1)
     rain = 20 * np.random.random(T)
+    np.random.seed(2)
     ept = 5 * np.random.random(T)
     
     
@@ -77,7 +77,7 @@ def hydrological_model():
     
     
     def update_sim(Soil_sto, Evap_rate, Inf_rate, Time_surf, Time_under):
-        param = [Soil_sto.value, Evap_rate.value, Inf_rate.value, Time_surf.value, Time_under.value]
+        param = np.array([Soil_sto.value, Evap_rate.value, Inf_rate.value, Time_surf.value, Time_under.value])
         model = hymod_gamma(param)
         Q_sim = model.simulation(param, rain, ept)[warmup:]
         ER = model.Pe[warmup:]
@@ -86,8 +86,8 @@ def hydrological_model():
         Q_s = model.QsL[warmup:]
         Q_q = model.QsF[warmup:]
         evap = model.Ea[warmup:]
-        rmse = RMSE(Q_sim, Q_obs[warmup:])*100
-        return ER, ER_q, ER_s, Q_q, Q_s, Q_sim, evap, rmse
+        error = hymod_gamma_error(param, rain, ept, Q_obs, warmup)
+        return ER, ER_q, ER_s, Q_q, Q_s, Q_sim, evap, error
     
     
     # ### Function to update the figure when changing the parameters with the sliders
@@ -98,8 +98,8 @@ def hydrological_model():
     def update_figure(change):
         with fig_hyd.batch_animate(duration=1000):
             fig_hyd.data[0].y = update_sim(Soil_sto, Evap_rate, Inf_rate, Time_surf, Time_under)[5]
-            fig_hyd.layout.title = "sim flow - obs flow = "+\
-            str("%.0f" % (update_sim(Soil_sto, Evap_rate, Inf_rate, Time_surf, Time_under)[7]))
+            fig_hyd.layout.title = "calibration error = "+\
+            str("%.0f" % (update_sim(Soil_sto, Evap_rate, Inf_rate, Time_surf, Time_under)[7]))+' ML'
         with fig_sto.batch_animate(duration=1000):
             fig_sto.data[0].y = np.ones(T+1)*Soil_sto.value
             fig_sto.data[1].line.width = np.mean(update_sim(Soil_sto, Evap_rate, Inf_rate, Time_surf, Time_under)[6])*5
@@ -185,22 +185,13 @@ def hydrological_model():
     
     
     # ### Observed hydrograph
+
     
-    # In[12]:
-    
-    
-    Soil_sto_obs = np.random.uniform(model_param.loc['Soil_sto','Min value'], model_param.loc['Soil_sto','Max value'])
-    Evap_rate_obs  = np.random.uniform(model_param.loc['Evap_rate','Min value'],  model_param.loc['Evap_rate','Max value'])
-    Inf_rate_obs = np.random.uniform(model_param.loc['Inf_rate','Min value'], model_param.loc['Inf_rate','Max value'])
-    Time_under_obs   = np.random.uniform(model_param.loc['Time_under','Min value'],   model_param.loc['Time_under','Max value'])
-    Time_surf_obs   = np.random.uniform(model_param.loc['Time_surf','Min value'],   model_param.loc['Time_surf','Max value'])
-    
-    
-    # In[13]:
-    
-    param_obs = [77,0.06,0.06,1.81,5.65]
+    param_obs = [80,0.35,0.30,1.80,5.65]
     model_obs = hymod_gamma(param_obs)
-    Q_obs = model_obs.simulation(param_obs, rain, ept)
+    np.random.seed(3)
+    noise = np.random.random(T)*1
+    Q_obs = model_obs.simulation(param_obs, rain, ept) + noise
     
     
     # ### Plot the interactive figure
@@ -209,11 +200,11 @@ def hydrological_model():
     # In[15]:
     
     
-    param = [Soil_sto.value, Evap_rate.value, Inf_rate.value, Time_surf.value, Time_under.value]
+    param = np.array([Soil_sto.value, Evap_rate.value, Inf_rate.value, Time_surf.value, Time_under.value])
     model = hymod_gamma(param)
     Q_sim = model.simulation(param, rain, ept)
-    ER_q_sim = model.Pe * (1-Inf_rate.value)
-    ER_s_sim = model.Pe * Inf_rate.value
+#    ER_q_sim = model.Pe * (1-Inf_rate.value)
+#    ER_s_sim = model.Pe * Inf_rate.value
     
     
     # #### Figure: storage capacity
@@ -221,7 +212,7 @@ def hydrological_model():
     # In[16]:
     
     
-    sto_trace = go.Scatter(x=np.linspace(0, 1, num=T+1), y=np.ones(T+1)*Soil_sto.value, name=None, fill="tozeroy", fillcolor = 'sandybrown',mode='none')
+    sto_trace = go.Scatter(x=np.linspace(0, 1, num=T+1), y=np.ones(T+1)*Soil_sto.value, name=None, fill="tozeroy", fillcolor = 'rgba(120, 170, 150, 1)',mode='none')
     evap_line = go.Scatter(x=[0.8,0.8], y=[75,95], mode = 'lines', line = dict(color = 'red', width = model.Ea.mean()*5),opacity = 0.9)
     evap_head = go.Scatter(x=[0.8], y=[95], mode = 'markers', opacity = 0.9, marker = dict(symbol = 'triangle-up', size = model.Ea.mean()*10, color = 'red'))
     sto_layout = go.Layout(xaxis = dict(showticklabels=False,range = [0,1], showgrid = False),
@@ -258,11 +249,11 @@ def hydrological_model():
     # In[18]:
     
     
-    Q_f_sin_line = go.Scatter(x=x_f, y=y_f, mode = 'lines', line = dict(color = 'blue', width = model.QsF.mean()*2),opacity = 0.4)
-    Q_s_sin_line = go.Scatter(x=x_s, y=y_s, mode = 'lines', line = dict(color = 'blue', width =  model.QsL.mean()*2),opacity = 0.8)
+    Q_f_sin_line = go.Scatter(x=x_f, y=y_f, mode = 'lines', line = dict(color = 'rgba(0,176,240, 1)', width = model.QsF.mean()*2))
+    Q_s_sin_line = go.Scatter(x=x_s, y=y_s, mode = 'lines', line = dict(color = 'rgba(33,76,127, 1)', width =  model.QsL.mean()*2))
     
-    Q_f_head = go.Scatter(x=[15.5],   y=[8], mode = 'markers', opacity = 0.4,marker = dict(symbol = 'triangle-right', size = model.QsF.mean()*6, color = 'blue'))
-    Q_s_head = go.Scatter(x=[15.5],   y=[4], mode = 'markers', opacity = 0.8,marker = dict(symbol = 'triangle-right', size = model.QsL.mean()*6, color = 'blue'))
+    Q_f_head = go.Scatter(x=[15.5],   y=[8], mode = 'markers', marker = dict(symbol = 'triangle-right', size = model.QsF.mean()*6, color = 'rgba(0,176,240, 1)'))
+    Q_s_head = go.Scatter(x=[15.5],   y=[4], mode = 'markers', marker = dict(symbol = 'triangle-right', size = model.QsL.mean()*6, color = 'rgba(33,76,127, 1)'))
     
     flo_layout = go.Layout(width=250, height=200, margin=dict(l=0,t=50,b=0,r=0),plot_bgcolor='white',showlegend=False,
                            xaxis = dict(range = [0,18],showticklabels=False),
@@ -281,13 +272,13 @@ def hydrological_model():
     
     sim_hyd = go.Scatter(x=dates[warmup:], y=Q_sim[warmup:], name='sim hyd',line = dict(color='blue'))
     obs_hyd = go.Scatter(x=dates[warmup:], y=Q_obs[warmup:], name='obs hyd',line = dict(color='darkgrey'))
-    rmse = np.max([RMSE(Q_sim[warmup:], Q_obs[warmup:]),0])
+    error = hymod_gamma_error(param, rain, ept, Q_obs, warmup)
     fig_hyd = go.FigureWidget(data   = [sim_hyd,obs_hyd],
                               layout = go.Layout(xaxis = dict(title = '<b>date</b>'),
-                                                 yaxis = dict(range = [0,20],title = '<b>River flow</b>'),
+                                                 yaxis = dict(range = [0,20],title = '<b>River flow (ML/day)</b>'),
                                                  height = 250,width=500,margin=dict(t=50,r=0,l=0),
                                                  legend = dict(x=0,y=1,bgcolor='rgba(0,0,0,0)'),
-                                                 title = "sim flow - obs flow = "+str("%.0f" % (rmse*100))))
+                                                 title = "calibration error = "+str("%.0f" % (error))+' ML'))
     
     
     # #### Plot
