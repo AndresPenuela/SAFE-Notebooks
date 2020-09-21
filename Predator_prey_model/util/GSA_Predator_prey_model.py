@@ -208,10 +208,17 @@ def screening():
             X = sample_input(distr_par).X
             Y = run_model(X).Y
             KS_median, _, _, KS_dummy = PAWN.pawn_indices(X, Y, n, dummy = True)
+            KS_median, _, _ = PAWN.pawn_indices(X, Y, n, Nboot=1000)
+            KS_median_m, KS_median_lb, KS_median_ub = aggregate_boot(KS_median)
     
+            k = 0
             for i in range(0,M):
-                fig1.data[i].y = [KS_median[i]]
-            fig1.data[i+1].y = KS_dummy
+                fig1.data[k].y = np.ones(2)*KS_median_m[i]
+                fig1.data[k+1].y = np.ones(2)*KS_median_lb[i]
+                fig1.data[k+2].y = np.ones(2)*KS_median_ub[i]
+                k = k + 3
+                
+            fig1.data[k].y = [KS_dummy[0],KS_dummy[0]]
     #         fig1.layout.title = 'model output: <b>'+outputs[output.value]
     
     
@@ -329,7 +336,7 @@ def screening():
     fig1.add_trace(go.Scatter(x=[3.75,4.25], y=np.ones(2)*KS_median_lb[4], mode = 'lines', line = dict(color ='rgba(33,76,127, 0)')))
     fig1.add_trace(go.Scatter(x=[3.75,4.25], y=np.ones(2)*KS_median_ub[4], mode = 'none', fill='tonexty',fillcolor = 'rgba(33,76,127, 0.25)'))
     # Threshold
-    fig1.add_shape(dict(type="line",x0=-1,y0=KS_dummy[0],x1=M,y1=KS_dummy[0],line=dict(color="black",width=2, dash='dash')))
+    fig1.add_trace(go.Scatter(x=[-1,M],y=[KS_dummy[0],KS_dummy[0]],line=dict(color="black",width=2, dash='dash')))
     
     tick_text  = ["Predator initial population",
                 "Predator attack rate",
