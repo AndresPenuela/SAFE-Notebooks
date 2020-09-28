@@ -70,11 +70,9 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from util import PAWN
-import util.plot_functions as pf # module to visualize the results
 from util.model_execution import model_execution # module to execute the model
 from util.sampling import AAT_sampling, AAT_sampling_extend # module to perform the input sampling
 from util.util import aggregate_boot  # function to aggregate the bootstrap results
-from util.util import aggregate_boot
 
 import util.flu_model as flu_model
 
