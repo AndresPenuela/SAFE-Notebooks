@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+i#!/usr/bin/env python
 # coding: utf-8
 
 # # Predator prey model
@@ -68,7 +68,7 @@ def predator_prey_interactive():
         with fig.batch_animate(duration=1000):
             fig.data[0].y = update_sim(predator_ini,attack_rate,death_rate,efficiency_rate,prey_ini,growth_rate,carrying_capacity)[0]
             fig.data[1].y = update_sim(predator_ini,attack_rate,death_rate,efficiency_rate,prey_ini,growth_rate,carrying_capacity)[1]
-            fig.layout.title = "equilibrium error = "+\
+            fig.layout.title = "equilibrium deviation = "+\
             str("%.0f" % (update_sim(predator_ini,attack_rate,death_rate,efficiency_rate,prey_ini,growth_rate,carrying_capacity)[2]*1000)+" individuals")
     
     # ### Definition of the sliders
