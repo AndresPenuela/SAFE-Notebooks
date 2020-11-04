@@ -34,75 +34,123 @@ dRI / dt = γS
 """
 from scipy.integrate import odeint
 import numpy as np
+from numba import njit # the function jit allows to compile the code and reduced
 
 class population:
     
-    def __init__(self, N = 1000, RI_ratio = 0.1, S_0 = 1, D_0 = 0):
+    def __init__(self, N = 100, I_0 = 10, S_0 = 1):
         # Total population, N.
         self.N = N
-        # Ratio of population who is immune
-        self.RI_ratio = RI_ratio
         # Initial number of sick individuals
         self.S_0 = S_0
         # Initial number of immune individuals
-        self.RI_0 = N * RI_ratio
-        # Deads, D_0
-        self.D_0 = D_0
+        self.I_0 = I_0
         # Everyone else, S_0, is susceptible to infection initially.
-        self.V_0 = N - S_0 - self.RI_0 - D_0
+        self.V_0 = N - S_0 - I_0
 
         
-def simulation(t,population, beta, gamma, alpha):
+def simulation(t,population, contact, contagion, recovery, vaccination):
     
-    y_0 = population.V_0, population.S_0, population.RI_0, population.D_0
+    y_0 = population.S_0, population.I_0, population.V_0
     
-    def deriv(y, t, N, beta, gamma,alpha):
-        V, S, IR, D = y
-        dVdt = -beta * V * S / N
-        dSdt = beta * V * S / N - gamma * S - alpha * S * S / N #- sigma * S
-        dRIdt = gamma * S
-        dDdt = alpha * S * S / N # + sigma * S
+    def deriv(y, t, N, contact, contagion, recovery, vaccination):
+        S, RI, V = y
+        dVdt = -contact*contagion * V * S / N - np.min([vaccination, vaccination*V])
+        dSdt = contact*contagion * V * S / N - recovery * S #- sigma * S
+        dRIdt = recovery * S + np.min([vaccination, vaccination*V])
         
-        return dVdt, dSdt, dRIdt, dDdt
+        return dSdt, dRIdt, dVdt
     
-    ret = odeint(deriv, y_0, t, args=(population.N, beta, gamma, alpha))
-    V, S, RI, D = ret.T
+    ret = odeint(deriv, y_0, t, args=(population.N, contact, contagion, recovery, vaccination))
+    S, RI, V = ret.T
     
-    return D, S, RI, V
+    return S, RI, V
 
-def function(param,N,t):
-    RI_0 = param[0]*N
-    S_0 = param[1]
-    beta = param[2]
-    gamma = 1/param[3]
-    alpha = param[4]
+@njit(parallel = False) # Numba decorator to speed-up the function below
+def model(param,t,N):
+    RI_0 = param[0]
+    S_0 = 1
+    contact = param[1]
+    contagion = param[2]
+    recovery = 1/param[3]
+    vaccination = param[4]
     
-    D_0 = 0
-    V_0 = N - S_0 - RI_0 - D_0
+    V_0 = N - S_0 - RI_0
     
-    y_0 = V_0, S_0, RI_0, D_0
+    T = len(t)
+    S  = np.zeros(T)
+    RI = np.zeros(T)
+    V  = np.zeros(T)
+    vaccination_num = np.zeros(T)
     
-    def deriv(y, t, N, beta, gamma,alpha):
-        V, S, IR, D = y
-        dVdt = -beta * V * S / N
-        dSdt = beta * V * S / N - gamma * S - alpha * S * S / N #- sigma * S
-        dRIdt = gamma * S
-        dDdt = alpha * S * S / N # + sigma * S  
+    S[0] = S_0
+    RI[0] =  RI_0
+    V[0] = V_0
+    
+    for i in np.arange(T-1):
+        V[i+1] = np.array([V[i] - contact*contagion * S[i] * V[i] / N - vaccination_num[i],0]).max()
+        RI[i+1] = RI[i] + recovery * S[i] + vaccination_num[i]
+        S[i+1] = np.array([S[i] + contact*contagion * S[i] * V[i] / N - recovery * S[i],N]).min()
+        vaccination_num[i+1] = np.array([V[i+1], vaccination]).min()
         
-        return dVdt, dSdt, dRIdt, dDdt
+    max_value = np.array(np.max(S))
+    vaccine_price = 70 # £ per vaccine
+    vaccination_cost = RI_0 * vaccine_price + np.sum(vaccination_num) * vaccine_price
+    social_dist_cost = (2 - contact) * 2000
+    masks_cost = (1 - contagion) * 500
+    treatment_cost = (21 - 1/recovery) * 100
+    total_cost = np.array(vaccination_cost + \
+                          social_dist_cost + masks_cost + \
+                          treatment_cost)
+        
+    return S, RI, V,max_value,total_cost
+
+@njit(parallel = False) # Numba decorator to speed-up the function below        
+def function(param,t,N,output):
+    RI_0 = param[0]
+    S_0 = 1
+    contact = param[1]
+    contagion = param[2]
+    recovery = 1/param[3]
+    vaccination = param[4]
     
-    ret = odeint(deriv, y_0, t, args=(N, beta, gamma, alpha))
-    V, S, RI, D = ret.T
+    V_0 = N - S_0 - RI_0
     
-#    if output == 0:
-#        out = np.array(D[-1])
-#    elif output == 1:
-#        out = np.array(S[-1])
+    T = len(t)
+    S  = np.zeros(T)
+    RI = np.zeros(T)
+    V  = np.zeros(T)
+    vaccination_num = np.zeros(T)
+    
+    S[0] = S_0
+    RI[0] =  RI_0
+    V[0] = V_0
+    
+    
+    
+    for i in np.arange(T-1):
+        V[i+1] = np.array([V[i] - contact*contagion * S[i] * V[i] / N - vaccination_num[i],0]).max()
+        vaccination_num[i+1] = np.array([V[i+1], vaccination]).min()
+        RI[i+1] = RI[i] + recovery * S[i] + vaccination_num[i+1]
+        S[i+1] = np.array([S[i] + contact*contagion * S[i] * V[i] / N - recovery * S[i],N]).min()
+    
+    if output == 0: # max number of sick individuals in a day
+        out = np.array(np.max(S))
+    elif output == 1: # total cost of the measures
+        vaccine_price = 70 # £ per vaccine. Cost before the outbreak
+        vaccination_cost = RI_0 * vaccine_price + np.sum(vaccination_num) * vaccine_price
+        social_dist_cost = (2 - contact) * 2000
+        masks_cost = (1 - contagion) * 500
+        treatment_cost = (21 - 1/recovery) * 100
+        out = np.array(vaccination_cost + \
+                       social_dist_cost + masks_cost + \
+                       treatment_cost)
+        
 #    elif output == 2:
 #        out = np.array(RI[-1])
 #    elif output == 3:
 #        out = np.array(V[-1])
     
-    out = np.array(np.max(S))
+#    out = np.array(np.max(S))
     
     return out
