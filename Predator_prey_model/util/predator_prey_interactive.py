@@ -55,8 +55,8 @@ def predator_prey_interactive():
     def update_sim(predator_ini,attack_rate,death_rate,efficiency_rate,prey_ini,growth_rate,carrying_capacity):
         param = [predator_ini.value,attack_rate.value,efficiency_rate.value,death_rate.value,prey_ini.value]
         predator_pop,prey_pop = predator_prey_model.model(param,T)
-        equil_error = np.array(np.abs(predator_pop[-1]-equil_value)+np.abs(prey_pop[-1]-equil_value))
-        return predator_pop,prey_pop,equil_error
+        equil_dev = np.array(np.abs(predator_pop[-1]-equil_value)+np.abs(prey_pop[-1]-equil_value))
+        return predator_pop,prey_pop,equil_dev
     
     
     # ### Function to update the figure when changing the parameters with the sliders
@@ -176,7 +176,7 @@ def predator_prey_interactive():
     # In[12]:
     
     
-    predator_pop,prey_pop,equil_error = update_sim(predator_ini,attack_rate,death_rate,efficiency_rate,prey_ini,growth_rate,carrying_capacity)
+    predator_pop,prey_pop,equil_dev = update_sim(predator_ini,attack_rate,death_rate,efficiency_rate,prey_ini,growth_rate,carrying_capacity)
     
     
     # #### Figure with two traces: predator and prey populations ###
@@ -193,7 +193,7 @@ def predator_prey_interactive():
                                                           ),
                                              yaxis = dict(range = [0,carrying_capacity.max+1],
                                                           title = 'population (x1000)',titlefont = dict(size=20)),
-                                             title = "equilibrium error = "+str("%.0f" % (equil_error*1000))+" individuals",
+                                             title = "equilibrium deviation = "+str("%.0f" % (equil_dev*1000))+" individuals",
                                              margin=dict(t=30)))
     
 #    fig.add_shape(dict(type="line",x0=-1,y0= equil_value,x1=T,y1= equil_value,line=dict(color="darkblue",width=2, dash='dash')),name='equilibrium')
