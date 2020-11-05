@@ -113,6 +113,6 @@ def function(param,T):
 #        if prey_pop[t] < 2 or predator_pop[t] < 2 or prey_pop[t] > carrying_capacity or predator_pop[t] > carrying_capacity:
 #            break
     equil_value = 7
-    equil_error = np.array(np.abs(predator_pop[-1]-equil_value)+np.abs(prey_pop[-1]-equil_value))
+    equil_dev = np.array(np.abs(predator_pop[-1]-equil_value)+np.abs(prey_pop[-1]-equil_value))
         
-    return equil_error
+    return equil_dev
