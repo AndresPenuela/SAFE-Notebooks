@@ -1,4 +1,4 @@
-i#!/usr/bin/env python
+#!/usr/bin/env python
 # coding: utf-8
 
 # # Predator prey model
@@ -46,7 +46,8 @@ def predator_prey_interactive():
     T = 3000 # days
     time_range = np.arange(1,T)
     
-    equil_value = 7
+    equil_value = 7 # 7 x 1000 is the equilibrium population
+    equil_lim = 0.5 # ±0.5 x 1000 is the limit to maintain the equilibrium
     # ### Function to update the simulation when changing the parameters with the sliders
     
     # In[3]:
@@ -184,8 +185,8 @@ def predator_prey_interactive():
     # In[15]:
     predator_trace = go.Scatter(x=time_range, y=predator_pop, name='predator', marker_color = 'rgba(180, 69, 42, 1)',line=dict(width=3))
     prey_trace = go.Scatter(x=time_range, y=prey_pop, name='prey', marker_color = 'rgba(26, 132, 148, 1)',line=dict(width=3))
-    equil_trace_1 = go.Scatter(x=[0,T+1],y=[equil_value+0.25,equil_value+0.25], mode = 'lines',name='equilibrium',line=dict(color="darkblue",width=1, dash='dash'))
-    equil_trace_2 = go.Scatter(x=[0,T+1],y=[equil_value-0.25,equil_value-0.25], mode = 'lines',name='equilibrium',line=dict(color="darkblue",width=1, dash='dash'),showlegend=False)
+    equil_trace_1 = go.Scatter(x=[0,T+1],y=[equil_value+equil_lim,equil_value+equil_lim], mode = 'lines',name='equilibrium',line=dict(color="darkblue",width=1, dash='dash'))
+    equil_trace_2 = go.Scatter(x=[0,T+1],y=[equil_value-equil_lim,equil_value-equil_lim], mode = 'lines',name='equilibrium',line=dict(color="darkblue",width=1, dash='dash'),showlegend=False)
     fig = go.FigureWidget(data   = [predator_trace,prey_trace,equil_trace_1,equil_trace_2],
                           layout = go.Layout(xaxis = dict(title = 'days', titlefont = dict(size=20),
                                                           range = [1,365],

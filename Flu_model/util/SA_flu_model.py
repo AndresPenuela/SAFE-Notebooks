@@ -266,7 +266,7 @@ def screening():
     distr_par = setup_model(x1, x2, x3, x4, x5).distr_par
     X = sample_input(distr_par).X
     Y = run_model(X).Y
-#    KS_median, _, _, KS_dummy = PAWN.pawn_indices(X, Y, n, dummy = True)
+    KS_median, _, _, KS_dummy = PAWN.pawn_indices(X, Y, n, dummy = True)
     KS_median, _, _ = PAWN.pawn_indices(X, Y, n, Nboot=1000)
     KS_median_m, KS_median_lb, KS_median_ub = aggregate_boot(KS_median)
     
@@ -275,30 +275,36 @@ def screening():
     
     
     fig1 = go.FigureWidget(layout = dict(width=500, height=400,showlegend = False,margin=dict(t=30,r=0,l=75)))
-    # Soil storage capacity
+    # Initial number of vaccinated individuals
     fig1.add_trace(go.Scatter(x=[-0.25,0.25], y=np.ones(2)*KS_median_m[0], mode = 'lines', line = dict(color ='rgba(120, 170, 150, 1)')))
     fig1.add_trace(go.Scatter(x=[-0.25,0.25], y=np.ones(2)*KS_median_lb[0], mode = 'lines', line = dict(color ='rgba(120, 170, 150, 0)')))
     fig1.add_trace(go.Scatter(x=[-0.25,0.25], y=np.ones(2)*KS_median_ub[0], mode = 'none', fill='tonexty',fillcolor = 'rgba(120, 170, 150, 0.25)'))
-    # Evaporation rate
-    fig1.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_m[1], mode = 'lines', line = dict(color ='rgba(250, 0, 0, 1)')))
-    fig1.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_lb[1], mode = 'lines', line = dict(color ='rgba(250, 0, 0, 0)')))
-    fig1.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_ub[1], mode = 'none', fill='tonexty',fillcolor = 'rgba(250, 0, 0, 0.25)'))
-    # Infiltration rate
-    fig1.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_m[2], mode = 'lines', line = dict(color ='rgba(105,105,105, 1)')))
-    fig1.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_lb[2], mode = 'lines', line = dict(color ='rgba(105,105,105, 0)')))
-    fig1.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_ub[2], mode = 'none', fill='tonexty',fillcolor = 'rgba(105,105,105, 0.25)'))
-    # Travel time - surface flow (days)
-    fig1.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_m[3], mode = 'lines', line = dict(color ='rgba(44,172,206, 1)')))
-    fig1.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_lb[3], mode = 'lines', line = dict(color ='rgba(44,172,206, 0)')))
-    fig1.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_ub[3], mode = 'none', fill='tonexty',fillcolor = 'rgba(44,172,206, 0.25)'))
-    # Travel time - underground flow (days)
+    # Contact rate per day
+    fig1.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_m[1], mode = 'lines', line = dict(color ='rgba(250, 0, 0, 1)')))
+    fig1.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_lb[1], mode = 'lines', line = dict(color ='rgba(250, 0, 0, 0)')))
+    fig1.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_ub[1], mode = 'none', fill='tonexty',fillcolor = 'rgba(250, 0, 0, 0.25)'))
+    # Contagion rate
+    fig1.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_m[2], mode = 'lines', line = dict(color ='rgba(105,105,105, 1)')))
+    fig1.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_lb[2], mode = 'lines', line = dict(color ='rgba(105,105,105, 0)')))
+    fig1.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_ub[2], mode = 'none', fill='tonexty',fillcolor = 'rgba(105,105,105, 0.25)'))
+    # Revovery time
+    fig1.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_m[3], mode = 'lines', line = dict(color ='rgba(44,172,206, 1)')))
+    fig1.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_lb[3], mode = 'lines', line = dict(color ='rgba(44,172,206, 0)')))
+    fig1.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_ub[3], mode = 'none', fill='tonexty',fillcolor = 'rgba(44,172,206, 0.25)'))
+    # Vaccination rate per day
     fig1.add_trace(go.Scatter(x=[3.75,4.25], y=np.ones(2)*KS_median_m[4], mode = 'lines', line = dict(color ='rgba(33,76,127, 1)')))
     fig1.add_trace(go.Scatter(x=[3.75,4.25], y=np.ones(2)*KS_median_lb[4], mode = 'lines', line = dict(color ='rgba(33,76,127, 0)')))
     fig1.add_trace(go.Scatter(x=[3.75,4.25], y=np.ones(2)*KS_median_ub[4], mode = 'none', fill='tonexty',fillcolor = 'rgba(33,76,127, 0.25)'))
     # Threshold
-    # fig1.add_trace(go.Scatter(x=[-1,M],y=[KS_dummy[0],KS_dummy[0]],line=dict(color="black",width=2, dash='dash')))
+    fig1.add_trace(go.Scatter(x=[-1,M],y=[KS_dummy[0],KS_dummy[0]],line=dict(color="black",width=2, dash='dash')))
+    # Vertical line
+    fig1.add_trace(go.Scatter(x=[1.5,1.5],y=[-0.5,1],line=dict(color="black",width=1)))
     
-    tick_text  = param_names
+    tick_text  =    ["Initial number of vaccinated individuals",
+                    "Recovery time",
+                    "Contact rate per day", 
+                    "Contagion ratio", 
+                    "Vaccination rate per day"]
     
     fig1.layout.xaxis.range=[-0.5,4.5]
     fig1.update_layout(xaxis = dict(tickmode = 'array',tickvals = [0, 1, 2, 3, 4],ticktext = tick_text))
@@ -313,7 +319,7 @@ def screening():
     distr_par = setup_model(x1, x2, x3, x4, x5).distr_par
     X = sample_input(distr_par).X
     Y = run_model(X).Y
-#    KS_median, _, _, KS_dummy = PAWN.pawn_indices(X, Y, n, dummy = True)
+    KS_median, _, _, KS_dummy = PAWN.pawn_indices(X, Y, n, dummy = True)
     KS_median, _, _ = PAWN.pawn_indices(X, Y, n, Nboot=1000)
     KS_median_m, KS_median_lb, KS_median_ub = aggregate_boot(KS_median)
     
@@ -322,32 +328,36 @@ def screening():
     
     
     fig2 = go.FigureWidget(layout = dict(width=500, height=400,showlegend = False,margin=dict(t=30,r=0,l=75)))
-    # Soil storage capacity
+    # Initial number of vaccinated individuals
     fig2.add_trace(go.Scatter(x=[-0.25,0.25], y=np.ones(2)*KS_median_m[0], mode = 'lines', line = dict(color ='rgba(120, 170, 150, 1)')))
     fig2.add_trace(go.Scatter(x=[-0.25,0.25], y=np.ones(2)*KS_median_lb[0], mode = 'lines', line = dict(color ='rgba(120, 170, 150, 0)')))
     fig2.add_trace(go.Scatter(x=[-0.25,0.25], y=np.ones(2)*KS_median_ub[0], mode = 'none', fill='tonexty',fillcolor = 'rgba(120, 170, 150, 0.25)'))
-    # Evaporation rate
-    fig2.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_m[1], mode = 'lines', line = dict(color ='rgba(250, 0, 0, 1)')))
-    fig2.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_lb[1], mode = 'lines', line = dict(color ='rgba(250, 0, 0, 0)')))
-    fig2.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_ub[1], mode = 'none', fill='tonexty',fillcolor = 'rgba(250, 0, 0, 0.25)'))
-    # Infiltration rate
-    fig2.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_m[2], mode = 'lines', line = dict(color ='rgba(105,105,105, 1)')))
-    fig2.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_lb[2], mode = 'lines', line = dict(color ='rgba(105,105,105, 0)')))
-    fig2.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_ub[2], mode = 'none', fill='tonexty',fillcolor = 'rgba(105,105,105, 0.25)'))
-    # Travel time - surface flow (days)
-    fig2.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_m[3], mode = 'lines', line = dict(color ='rgba(44,172,206, 1)')))
-    fig2.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_lb[3], mode = 'lines', line = dict(color ='rgba(44,172,206, 0)')))
-    fig2.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_ub[3], mode = 'none', fill='tonexty',fillcolor = 'rgba(44,172,206, 0.25)'))
-    # Travel time - underground flow (days)
+    # Contact rate per day
+    fig2.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_m[1], mode = 'lines', line = dict(color ='rgba(250, 0, 0, 1)')))
+    fig2.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_lb[1], mode = 'lines', line = dict(color ='rgba(250, 0, 0, 0)')))
+    fig2.add_trace(go.Scatter(x=[1.75,2.25], y=np.ones(2)*KS_median_ub[1], mode = 'none', fill='tonexty',fillcolor = 'rgba(250, 0, 0, 0.25)'))
+    # Contagion ratio
+    fig2.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_m[2], mode = 'lines', line = dict(color ='rgba(105,105,105, 1)')))
+    fig2.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_lb[2], mode = 'lines', line = dict(color ='rgba(105,105,105, 0)')))
+    fig2.add_trace(go.Scatter(x=[2.75,3.25], y=np.ones(2)*KS_median_ub[2], mode = 'none', fill='tonexty',fillcolor = 'rgba(105,105,105, 0.25)'))
+    # Recovery time
+    fig2.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_m[3], mode = 'lines', line = dict(color ='rgba(44,172,206, 1)')))
+    fig2.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_lb[3], mode = 'lines', line = dict(color ='rgba(44,172,206, 0)')))
+    fig2.add_trace(go.Scatter(x=[0.75,1.25], y=np.ones(2)*KS_median_ub[3], mode = 'none', fill='tonexty',fillcolor = 'rgba(44,172,206, 0.25)'))
+    # Vaccination rate per day
     fig2.add_trace(go.Scatter(x=[3.75,4.25], y=np.ones(2)*KS_median_m[4], mode = 'lines', line = dict(color ='rgba(33,76,127, 1)')))
     fig2.add_trace(go.Scatter(x=[3.75,4.25], y=np.ones(2)*KS_median_lb[4], mode = 'lines', line = dict(color ='rgba(33,76,127, 0)')))
     fig2.add_trace(go.Scatter(x=[3.75,4.25], y=np.ones(2)*KS_median_ub[4], mode = 'none', fill='tonexty',fillcolor = 'rgba(33,76,127, 0.25)'))
+
+
     # Threshold
-    # fig2.add_trace(go.Scatter(x=[-1,M],y=[KS_dummy[0],KS_dummy[0]],line=dict(color="black",width=2, dash='dash')))
+    fig2.add_trace(go.Scatter(x=[-1,M],y=[KS_dummy[0],KS_dummy[0]],line=dict(color="black",width=2, dash='dash')))
+    # Vertical line
+    fig2.add_trace(go.Scatter(x=[1.5,1.5],y=[-0.5,1],line=dict(color="black",width=1)))
     
-    fig2.layout.xaxis.range=[-0.5,4.5]
-    fig2.update_layout(xaxis = dict(tickmode = 'array',tickvals = [0, 1, 2, 3, 4],ticktext = tick_text))
-    fig2.layout.yaxis.range=[0,0.5]
+    fig2.layout.xaxis.range = [-0.5,4.5]
+    fig2.update_layout(xaxis = dict(tickmode = 'array', tickvals = [0, 1, 2, 3, 4], ticktext = tick_text))
+    fig2.layout.yaxis.range = [0,0.5]
     fig2.layout.yaxis.title='Sensitivity index'
     fig2.layout.title = 'model output: <b>'+outputs[output.value]
     
