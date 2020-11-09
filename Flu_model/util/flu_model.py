@@ -95,10 +95,13 @@ def model(param,t,N):
         
     max_value = np.array(np.max(S))
     vaccine_price = 70 # £ per vaccine
-    vaccination_cost = RI_0 * vaccine_price + np.sum(vaccination_num) * vaccine_price
-    social_dist_cost = (2 - contact) * 2000
-    masks_cost = (1 - contagion) * 500
-    treatment_cost = (21 - 1/recovery) * 100
+    vaccination_cost =  np.sum(vaccination_num) * vaccine_price# + RI_0 * vaccine_price
+    social_dist_price = 2000 # Price of implementing social distancing and isolation measures
+    social_dist_cost = (2 - contact) * social_dist_price
+    masks_price = 500 # Price of the distribution of face masks
+    masks_cost = (1 - contagion) * masks_price
+    treatment_price = 0 # we set it to zero to reflect that it is not an action but an unknown variable
+    treatment_cost = (21 - 1/recovery) * treatment_price
     total_cost = np.array(vaccination_cost + \
                           social_dist_cost + masks_cost + \
                           treatment_cost)
@@ -138,10 +141,13 @@ def function(param,t,N,output):
         out = np.array(np.max(S))
     elif output == 1: # total cost of the measures
         vaccine_price = 70 # £ per vaccine. Cost before the outbreak
-        vaccination_cost = RI_0 * vaccine_price + np.sum(vaccination_num) * vaccine_price
-        social_dist_cost = (2 - contact) * 2000
-        masks_cost = (1 - contagion) * 500
-        treatment_cost = (21 - 1/recovery) * 100
+        vaccination_cost = np.sum(vaccination_num) * vaccine_price# + RI_0 * vaccine_price 
+        social_dist_price = 2000 # Price of implementing social distancing and isolation measures
+        social_dist_cost = (2 - contact) * social_dist_price
+        masks_price = 500 # Price of the distribution of face masks
+        masks_cost = (1 - contagion) * masks_price
+        treatment_price = 0 # we set it to zero to reflect that it is not an action but an unknown variable
+        treatment_cost = (21 - 1/recovery) * treatment_price
         out = np.array(vaccination_cost + \
                        social_dist_cost + masks_cost + \
                        treatment_cost)
